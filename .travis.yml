@@ -1,8 +1,14 @@
 language: python
 
+services:
+  - postgresql
+
 install:
   - pip install -r requirements-dev.txt
   - pip install -r requirements.txt
+
+before_script:
+  - ./setup_db.sh
 
 script:
   - ./lint.sh
