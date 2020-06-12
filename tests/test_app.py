@@ -90,6 +90,26 @@ def test_app_unregister_when_registered(psycopg2_connect):
     app.connection.cursor().execute.assert_called_once_with(f"UNLISTEN {channel}")
 
 
+def test_app_unregister_when_multiple_registered(psycopg2_connect):
+    dsn = sentinel
+    app = App(dsn)
+    channel = "foo"
+
+    def bar0():
+        pass
+
+    def bar1():
+        pass
+
+    app.registry[channel].add(bar0)
+    app.registry[channel].add(bar1)
+
+    app.unregister(channel, bar1)
+
+    assert app.registry[channel] == set([bar0])
+    app.connection.cursor().execute.assert_not_called()
+
+
 def test_app_unregister_when_not_registered(psycopg2_connect):
     dsn = sentinel
     app = App(dsn)
