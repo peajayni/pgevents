@@ -8,11 +8,11 @@ install:
   - pip install -r requirements.txt
 
 before_script:
-  - ./setup_db.sh
+  - ./ci/setup_db.sh
 
 script:
-  - ./lint.sh
-  - ./test.sh
+  - ./ci/lint.sh
+  - ./ci/test.sh
 
 after_success:
   - coveralls
