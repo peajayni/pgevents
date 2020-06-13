@@ -4,7 +4,7 @@ import psycopg2
 
 from pgevents.app import App
 
-DSN = "dbname=postgres user=postgres password=postgres host=integration_db"
+DSN = "dbname=test user=test password=test host=localhost"
 CHANNEL = "foo"
 
 

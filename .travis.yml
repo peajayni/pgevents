@@ -1,5 +1,8 @@
 language: python
 
+services:
+  - postgresql
+
 install:
   - pip install -r requirements-dev.txt
   - pip install -r requirements.txt
@@ -7,6 +10,7 @@ install:
 script:
   - ./ci/lint.sh
   - ./ci/unit_test.sh
-  - ./ci/integration_test.sh
+  - ./ci/integration_test2.sh
+
 after_success:
   - coveralls

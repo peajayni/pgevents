@@ -1,4 +1,4 @@
 #!/bin/bash
-set -x
+set -eufx
 
 pytest --cov=pgevents tests/unit
