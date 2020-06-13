@@ -10,7 +10,7 @@ install:
 script:
   - ./ci/lint.sh
   - ./ci/unit_test.sh
-  - ./ci/integration_test2.sh
+  - ./ci/integration_test.sh
 
 after_success:
   - coveralls
