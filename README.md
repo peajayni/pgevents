@@ -23,6 +23,6 @@ app.run()
 
 Then send a notification by running the following SQL:
 
-```
+```sql
 NOTIFY foo;
 ```
