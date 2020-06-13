@@ -9,6 +9,8 @@ Python event framework using PostgreSQL listen/notify
 ## Example Usage
 
 ```python
+from pgevents import App
+
 dsn = "dbname=test user=test password=test host=localhost"
 channel = "foo"
 

@@ -2,6 +2,8 @@ from collections import defaultdict
 
 import psycopg2
 
+from pgevents import Event
+
 
 class App:
     def __init__(self, dsn):
@@ -59,4 +61,5 @@ class App:
 
     def _dispatch(self, notification):
         for handler in self.registry[notification.channel]:
-            handler(notification.payload)
+            event = Event(payload=notification.payload)
+            handler(event)

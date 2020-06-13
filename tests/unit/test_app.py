@@ -3,7 +3,7 @@ from unittest.mock import Mock, sentinel, call
 import psycopg2
 import pytest
 
-from pgevents.app import App
+from pgevents import App, Event
 
 
 @pytest.fixture
@@ -150,6 +150,6 @@ def test_run(psycopg2_connect):
         app.run()
 
     assert handler.call_args_list == [
-        call(notification0.payload),
-        call(notification1.payload),
+        call(Event(payload=notification0.payload)),
+        call(Event(payload=notification1.payload)),
     ]

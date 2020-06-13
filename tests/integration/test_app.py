@@ -2,7 +2,7 @@ from threading import Thread
 
 import psycopg2
 
-from pgevents.app import App
+from pgevents import App
 
 DSN = "dbname=test user=test password=test host=localhost"
 CHANNEL = "foo"
@@ -23,7 +23,7 @@ def test_app():
     app = App(DSN)
 
     @app.register(CHANNEL)
-    def handler(payload):
+    def handler(event):
         raise EndTest
 
     thread = Thread(target=send_notification)
