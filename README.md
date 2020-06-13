@@ -8,7 +8,7 @@ Python event framework using PostgreSQL listen/notify
 
 ## Example Usage
 
-```
+```python
 dsn = "dbname=test user=test password=test host=localhost"
 channel = "foo"
 
@@ -24,5 +24,5 @@ app.run()
 Then send a notification by running the following SQL:
 
 ```
-notify foo
+NOTIFY foo;
 ```
