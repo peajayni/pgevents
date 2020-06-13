@@ -1,6 +1,7 @@
 #!/bin/bash
 set -eufx
 
+BASE_DIR=$(dirname "$0")
 DB_IMAGE_NAME=integration_db
 TEST_IMAGE_NAME=test
 NETWORK_NAME=test
@@ -27,9 +28,9 @@ docker run \
     postgres
 
 echo "Waiting for postgres to start"
-sleep 15s
+sleep 10s
 
-docker build .. --tag ${TEST_IMAGE_NAME}
+docker build --tag ${TEST_IMAGE_NAME} "${BASE_DIR}/.."
 
 set +e
 docker run --rm --network ${NETWORK_NAME} ${TEST_IMAGE_NAME} pytest tests/integration
