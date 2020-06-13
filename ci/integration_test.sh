@@ -21,14 +21,13 @@ docker run \
     -d \
     --name ${DB_IMAGE_NAME} \
     --network ${NETWORK_NAME} \
-    -p 5432:5432 \
     -e POSTGRES_PASSWORD=postgres \
     -e POSTGRES_USER=postgres \
     -e POSTGRES_PASSWORD=postgres \
     postgres
 
 echo "Waiting for postgres to start"
-sleep 30s
+sleep 15s
 
 docker build .. --tag ${TEST_IMAGE_NAME}
 
