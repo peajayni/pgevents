@@ -3,7 +3,8 @@ from unittest.mock import Mock, sentinel, call
 import psycopg2
 import pytest
 
-from pgevents import App, Event
+from pgevents.app import App
+from pgevents.event import Event
 
 
 @pytest.fixture

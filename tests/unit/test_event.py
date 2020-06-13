@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from pgevents import Event
+from pgevents.event import Event
 
 
 def test_equality_when_equal():

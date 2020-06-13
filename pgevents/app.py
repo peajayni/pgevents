@@ -1,8 +1,11 @@
+import logging
 from collections import defaultdict
 
 import psycopg2
 
-from pgevents import Event
+from pgevents.event import Event
+
+LOGGER = logging.getLogger(__name__)
 
 
 class App:
@@ -15,6 +18,7 @@ class App:
 
     def register(self, channel):
         def decorator(func):
+            LOGGER.debug("Registering %s on channel: %s", func, channel)
             self._listen(channel)
             self._register(channel, func)
             return func
@@ -22,6 +26,7 @@ class App:
         return decorator
 
     def unregister(self, channel, func):
+        LOGGER.debug("Unregistering %s on channel: %s", func, channel)
         if self._unregister(channel, func):
             self._unlisten(channel)
 
@@ -56,10 +61,18 @@ class App:
     def _tick(self):
         self.connection.poll()
         while self.connection.notifies:
+            LOGGER.debug("Received notification")
             notification = self.connection.notifies.pop(0)
             self._dispatch(notification)
 
     def _dispatch(self, notification):
+        LOGGER.debug(
+            "Dispatching notification: pid=%s, channel=%s, payload=%s",
+            notification.pid,
+            notification.channel,
+            notification.payload,
+        )
         for handler in self.registry[notification.channel]:
+            LOGGER.debug("Dispatching to handler: %s", handler)
             event = Event(payload=notification.payload)
             handler(event)

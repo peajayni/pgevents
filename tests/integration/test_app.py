@@ -2,7 +2,7 @@ from threading import Thread
 
 import psycopg2
 
-from pgevents import App
+from pgevents.app import App
 
 DSN = "dbname=test user=test password=test host=localhost"
 CHANNEL = "foo"
