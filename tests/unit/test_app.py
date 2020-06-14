@@ -16,10 +16,18 @@ def psycopg2_connect(monkeypatch):
 
 def test_app_makes_connection(psycopg2_connect):
     dsn = sentinel
+
+    event_connection = Mock()
+    notification_connection = Mock()
+
+    psycopg2_connect.side_effect = [event_connection, notification_connection]
+
     app = App(dsn)
 
-    psycopg2_connect.assert_called_once_with(dsn)
-    app.connection.set_isolation_level.assert_called_once_with(
+    assert app.event_connection == event_connection
+    assert app.notification_connection == notification_connection
+
+    app.notification_connection.set_isolation_level.assert_called_once_with(
         psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT
     )
 
@@ -36,7 +44,7 @@ def test_app_register(psycopg2_connect):
     expected = dict(foo=set([bar]))
 
     assert app.registry == expected
-    app.connection.cursor().execute.assert_called_once_with(f"LISTEN {channel}")
+    app.notification_connection.cursor().execute.assert_called_once_with(f"LISTEN {channel}")
 
 
 def test_app_duplicated_register(psycopg2_connect):
@@ -53,7 +61,7 @@ def test_app_duplicated_register(psycopg2_connect):
     expected = dict(foo=set([bar]))
 
     assert app.registry == expected
-    app.connection.cursor().execute.assert_called_once_with(f"LISTEN {channel}")
+    app.notification_connection.cursor().execute.assert_called_once_with(f"LISTEN {channel}")
 
 
 def test_app_multiple_register(psycopg2_connect):
@@ -72,7 +80,7 @@ def test_app_multiple_register(psycopg2_connect):
     expected = dict(foo=set([bar0, bar1]))
 
     assert app.registry == expected
-    app.connection.cursor().execute.assert_called_once_with(f"LISTEN {channel}")
+    app.notification_connection.cursor().execute.assert_called_once_with(f"LISTEN {channel}")
 
 
 def test_app_unregister_when_registered(psycopg2_connect):
@@ -88,7 +96,7 @@ def test_app_unregister_when_registered(psycopg2_connect):
     app.unregister(channel, bar)
 
     assert app.registry[channel] == set()
-    app.connection.cursor().execute.assert_called_once_with(f"UNLISTEN {channel}")
+    app.notification_connection.cursor().execute.assert_called_once_with(f"UNLISTEN {channel}")
 
 
 def test_app_unregister_when_multiple_registered(psycopg2_connect):
@@ -108,7 +116,7 @@ def test_app_unregister_when_multiple_registered(psycopg2_connect):
     app.unregister(channel, bar1)
 
     assert app.registry[channel] == set([bar0])
-    app.connection.cursor().execute.assert_not_called()
+    app.notification_connection.cursor().execute.assert_not_called()
 
 
 def test_app_unregister_when_not_registered(psycopg2_connect):
@@ -122,7 +130,7 @@ def test_app_unregister_when_not_registered(psycopg2_connect):
     app.unregister(channel, bar)
 
     assert app.registry[channel] == set()
-    app.connection.cursor().execute.assert_not_called()
+    app.notification_connection.cursor().execute.assert_not_called()
 
 
 def test_run(psycopg2_connect):
@@ -144,8 +152,8 @@ def test_run(psycopg2_connect):
     app.register(channel)(handler)
 
     # Raise exception to break infinite loop
-    app.connection.poll.side_effect = [None, StopIteration]
-    app.connection.notifies = [notification0, notification1]
+    app.notification_connection.poll.side_effect = [None, StopIteration]
+    app.notification_connection.notifies = [notification0, notification1]
 
     with pytest.raises(StopIteration):
         app.run()

@@ -10,8 +10,9 @@ LOGGER = logging.getLogger(__name__)
 
 class App:
     def __init__(self, dsn):
-        self.connection = psycopg2.connect(dsn)
-        self.connection.set_isolation_level(
+        self.event_connection = psycopg2.connect(dsn)
+        self.notification_connection = psycopg2.connect(dsn)
+        self.notification_connection.set_isolation_level(
             psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT
         )
         self.registry: dict = defaultdict(set)
@@ -34,14 +35,14 @@ class App:
         if len(self.registry[channel]) != 0:
             return
 
-        cursor = self.connection.cursor()
+        cursor = self.notification_connection.cursor()
         cursor.execute(f"LISTEN {channel}")
 
     def _unlisten(self, channel):
         if len(self.registry[channel]) != 0:
             return
 
-        cursor = self.connection.cursor()
+        cursor = self.notification_connection.cursor()
         cursor.execute(f"UNLISTEN {channel}")
 
     def _register(self, channel, func):
@@ -59,10 +60,10 @@ class App:
             self._tick()
 
     def _tick(self):
-        self.connection.poll()
-        while self.connection.notifies:
+        self.notification_connection.poll()
+        while self.notification_connection.notifies:
             LOGGER.debug("Received notification")
-            notification = self.connection.notifies.pop(0)
+            notification = self.notification_connection.notifies.pop(0)
             self._dispatch(notification)
 
     def _dispatch(self, notification):
