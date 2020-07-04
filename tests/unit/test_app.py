@@ -2,7 +2,7 @@ from unittest.mock import Mock, sentinel, patch
 
 import pytest
 
-from pgevents.app import App
+from pgevents.app import App, always_continue
 from pgevents.events import EventStream
 
 
@@ -15,6 +15,10 @@ def data_access():
 @pytest.fixture
 def app():
     return App(dsn=sentinel.dsn, channel=sentinel.channel)
+
+
+def test_always_continue():
+    assert always_continue(sentinel.app)
 
 
 def test_run(app):
@@ -112,11 +116,20 @@ def test_register(app):
     assert app.handlers[sentinel.topic] == func
 
 
-def test_unregister(app):
+def test_unregister_when_registered(app):
     func = Mock()
-    app.handlers[sentinel.topic] = func
+    app.handlers = {sentinel.topic: func}
 
     app.unregister(sentinel.topic, func)
 
     with pytest.raises(KeyError):
         app.handlers[sentinel.topic]
+
+
+def test_unregister_when_not_registered(app):
+    func = Mock()
+    app.handlers = {}
+
+    app.unregister(sentinel.topic, func)
+
+    assert app.handlers == {}
