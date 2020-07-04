@@ -1,164 +1,122 @@
-from unittest.mock import Mock, sentinel, call
+from unittest.mock import Mock, sentinel, patch
 
-import psycopg2
 import pytest
 
 from pgevents.app import App
-from pgevents.event import Event
+from pgevents.events import EventStream
 
 
 @pytest.fixture
-def psycopg2_connect(monkeypatch):
-    connect = Mock()
-    monkeypatch.setattr(psycopg2, "connect", connect)
-    return connect
+def data_access():
+    with patch("pgevents.app.data_access") as data_access:
+        yield data_access
 
 
-def test_app_makes_connection(psycopg2_connect):
-    dsn = sentinel
-
-    event_connection = Mock()
-    notification_connection = Mock()
-
-    psycopg2_connect.side_effect = [event_connection, notification_connection]
-
-    app = App(dsn)
-
-    assert app.event_connection == event_connection
-    assert app.notification_connection == notification_connection
-
-    app.notification_connection.set_isolation_level.assert_called_once_with(
-        psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT
-    )
+@pytest.fixture
+def app():
+    return App(dsn=sentinel.dsn, channel=sentinel.channel)
 
 
-def test_app_register(psycopg2_connect):
-    dsn = sentinel
-    app = App(dsn)
-    channel = "foo"
+def test_run(app):
+    app.setup = Mock()
+    app.tick = Mock()
+    app.stop_listening = Mock()
 
-    @app.register(channel)
-    def bar():
-        pass
+    should_continue = Mock(side_effect=[True, False])
 
-    expected = dict(foo=set([bar]))
+    app.run(should_continue=should_continue)
 
-    assert app.registry == expected
-    app.notification_connection.cursor().execute.assert_called_once_with(f"LISTEN {channel}")
-
-
-def test_app_duplicated_register(psycopg2_connect):
-    dsn = sentinel
-    app = App(dsn)
-    channel = "foo"
-
-    def bar():
-        pass
-
-    app.register(channel)(bar)
-    app.register(channel)(bar)
-
-    expected = dict(foo=set([bar]))
-
-    assert app.registry == expected
-    app.notification_connection.cursor().execute.assert_called_once_with(f"LISTEN {channel}")
+    app.setup.assert_called_once()
+    app.tick.assert_called_once()
+    app.stop_listening.assert_called_once()
 
 
-def test_app_multiple_register(psycopg2_connect):
-    dsn = sentinel
-    app = App(dsn)
-    channel = "foo"
+def test_tick_when_notification(app):
+    app.connection = Mock()
+    app.connection.notifies = [sentinel.notification]
+    app.event_stream = Mock()
 
-    @app.register(channel)
-    def bar0():
-        pass
+    app.tick()
 
-    @app.register(channel)
-    def bar1():
-        pass
-
-    expected = dict(foo=set([bar0, bar1]))
-
-    assert app.registry == expected
-    app.notification_connection.cursor().execute.assert_called_once_with(f"LISTEN {channel}")
+    app.connection.poll.assert_called_once()
+    assert app.connection.notifies == []
+    app.event_stream.process.assert_called_once()
 
 
-def test_app_unregister_when_registered(psycopg2_connect):
-    dsn = sentinel
-    app = App(dsn)
-    channel = "foo"
+def test_tick_when_no_notification(app):
+    app.connection = Mock()
+    app.connection.notifies = []
+    app.event_stream = Mock()
 
-    def bar():
-        pass
+    app.tick()
 
-    app.registry[channel].add(bar)
-
-    app.unregister(channel, bar)
-
-    assert app.registry[channel] == set()
-    app.notification_connection.cursor().execute.assert_called_once_with(f"UNLISTEN {channel}")
+    app.connection.poll.assert_called_once()
+    assert app.connection.notifies == []
+    app.event_stream.process.assert_not_called()
 
 
-def test_app_unregister_when_multiple_registered(psycopg2_connect):
-    dsn = sentinel
-    app = App(dsn)
-    channel = "foo"
+def test_setup(app):
+    app.connect = Mock()
+    app.setup_event_stream = Mock()
+    app.start_listening = Mock()
 
-    def bar0():
-        pass
+    app.setup()
 
-    def bar1():
-        pass
-
-    app.registry[channel].add(bar0)
-    app.registry[channel].add(bar1)
-
-    app.unregister(channel, bar1)
-
-    assert app.registry[channel] == set([bar0])
-    app.notification_connection.cursor().execute.assert_not_called()
+    app.connect.assert_called_once()
+    app.setup_event_stream.assert_called_once()
+    app.start_listening.assert_called_once()
 
 
-def test_app_unregister_when_not_registered(psycopg2_connect):
-    dsn = sentinel
-    app = App(dsn)
-    channel = "foo"
+def test_connect(app, data_access):
+    app.connect()
 
-    def bar():
-        pass
-
-    app.unregister(channel, bar)
-
-    assert app.registry[channel] == set()
-    app.notification_connection.cursor().execute.assert_not_called()
+    data_access.connect.assert_called_once_with(sentinel.dsn)
+    assert app.connection == data_access.connect.return_value
 
 
-def test_run(psycopg2_connect):
-    dsn = sentinel
-    app = App(dsn)
-    channel = "foo"
+def test_setup_event_stream(app):
+    app.connection = sentinel.connection
+    app.handlers = sentinel.handlers
 
-    handler = Mock()
-    notification0 = Mock()
-    notification0.channel = channel
+    app.setup_event_stream()
 
-    notification1 = Mock()
-    notification1.channel = channel
+    assert app.event_stream == EventStream(sentinel.connection, sentinel.handlers)
 
-    # Should be ignored as different channel
-    notification2 = Mock()
-    notification2.channel = f"{channel}-different"
 
-    app.register(channel)(handler)
+def test_start_listening(app, data_access):
+    app.connection = sentinel.connection
+    cursor = data_access.cursor.return_value.__enter__.return_value
 
-    # Raise exception to break infinite loop
-    app.notification_connection.poll.side_effect = [None, StopIteration]
-    app.notification_connection.notifies = [notification0, notification1]
+    app.start_listening()
 
-    with pytest.raises(StopIteration):
-        app.run()
+    data_access.cursor.assert_called_once_with(sentinel.connection)
+    data_access.listen.assert_called_once_with(cursor, sentinel.channel)
 
-    assert handler.call_args_list == [
-        call(Event(payload=notification0.payload)),
-        call(Event(payload=notification1.payload)),
-    ]
+
+def test_stop_listening(app, data_access):
+    app.connection = sentinel.connection
+    cursor = data_access.cursor.return_value.__enter__.return_value
+
+    app.stop_listening()
+
+    data_access.cursor.assert_called_once_with(sentinel.connection)
+    data_access.unlisten.assert_called_once_with(cursor, sentinel.channel)
+
+
+def test_register(app):
+    func = Mock()
+
+    decorator = app.register(sentinel.topic)
+
+    assert decorator(func) == func
+    assert app.handlers[sentinel.topic] == func
+
+
+def test_unregister(app):
+    func = Mock()
+    app.handlers[sentinel.topic] = func
+
+    app.unregister(sentinel.topic, func)
+
+    with pytest.raises(KeyError):
+        app.handlers[sentinel.topic]

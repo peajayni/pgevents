@@ -1,79 +1,71 @@
 import logging
-from collections import defaultdict
 
-import psycopg2
-
-from pgevents.event import Event
+from pgevents import data_access, events
 
 LOGGER = logging.getLogger(__name__)
 
 
-class App:
-    def __init__(self, dsn):
-        self.event_connection = psycopg2.connect(dsn)
-        self.notification_connection = psycopg2.connect(dsn)
-        self.notification_connection.set_isolation_level(
-            psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT
-        )
-        self.registry: dict = defaultdict(set)
+def always_continue(app):
+    return True
 
-    def register(self, channel):
+
+class App:
+    def __init__(self, dsn, channel):
+        self.dsn = dsn
+        self.channel = channel
+
+        self.connection = None
+        self.event_stream = None
+        self.handlers = {}
+
+    def run(self, should_continue=always_continue):
+        self.setup()
+        try:
+            while should_continue(self):
+                self.tick()
+        finally:
+            self.stop_listening()
+
+    def tick(self):
+        self.connection.poll()
+        if self.connection.notifies:
+            LOGGER.debug("Received notification")
+            while self.connection.notifies:
+                self.connection.notifies.pop()
+            self.event_stream.process()
+
+    def setup(self):
+        self.connect()
+        self.setup_event_stream()
+        self.start_listening()
+
+    def connect(self):
+        self.connection = data_access.connect(self.dsn)
+
+    def setup_event_stream(self):
+        self.event_stream = events.EventStream(self.connection, self.handlers)
+
+    def start_listening(self):
+        LOGGER.debug("Starting to listen on channel: %s", self.channel)
+        with data_access.cursor(self.connection) as cursor:
+            data_access.listen(cursor, self.channel)
+
+    def stop_listening(self):
+        LOGGER.debug("Stopping listening on channel: %s", self.channel)
+        with data_access.cursor(self.connection) as cursor:
+            data_access.unlisten(cursor, self.channel)
+
+    def register(self, topic):
         def decorator(func):
-            LOGGER.debug("Registering %s on channel: %s", func, channel)
-            self._listen(channel)
-            self._register(channel, func)
+            LOGGER.debug("Registering %s on topic: %s", func, topic)
+            self.handlers[topic] = func
             return func
 
         return decorator
 
-    def unregister(self, channel, func):
-        LOGGER.debug("Unregistering %s on channel: %s", func, channel)
-        if self._unregister(channel, func):
-            self._unlisten(channel)
-
-    def _listen(self, channel):
-        if len(self.registry[channel]) != 0:
-            return
-
-        cursor = self.notification_connection.cursor()
-        cursor.execute(f"LISTEN {channel}")
-
-    def _unlisten(self, channel):
-        if len(self.registry[channel]) != 0:
-            return
-
-        cursor = self.notification_connection.cursor()
-        cursor.execute(f"UNLISTEN {channel}")
-
-    def _register(self, channel, func):
-        self.registry[channel].add(func)
-
-    def _unregister(self, channel, func):
+    def unregister(self, topic, func):
+        LOGGER.debug("Unregistering %s on topic: %s", func, topic)
         try:
-            self.registry[channel].remove(func)
-            return True
+            del self.handlers[topic]
         except KeyError:
-            return False
-
-    def run(self):
-        while True:
-            self._tick()
-
-    def _tick(self):
-        self.notification_connection.poll()
-        while self.notification_connection.notifies:
-            LOGGER.debug("Received notification")
-            notification = self.notification_connection.notifies.pop(0)
-            self._dispatch(notification)
-
-    def _dispatch(self, notification):
-        LOGGER.debug(
-            "Dispatching notification: pid=%s, channel=%s, payload=%s",
-            notification.pid,
-            notification.channel,
-            notification.payload,
-        )
-        for handler in self.registry[notification.channel]:
-            LOGGER.debug("Dispatching to handler: %s", handler)
-            event = Event(payload=notification.payload)
-            handler(event)
+            pass

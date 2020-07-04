@@ -12,15 +12,23 @@ Python event framework using PostgreSQL listen/notify
 from pgevents import App
 
 dsn = "dbname=test user=test password=test host=localhost"
-channel = "foo"
+channel = "foo"     # Postgres channel to listen for notifications on
+topic = "bar"       # Event topic for handler to respond to
 
-app = App(dsn)
+app = App(dsn, channel)
 
-@app.register(channel)
-def handler(payload):
-    print(f"Received payload {payload}"
+@app.register(topic)
+def handler(event):
+    print(f"Received event {event}")
 
 app.run()
+```
+
+Create an event entry
+
+```sql
+INSERT INTO events (topic)
+VALUES('bar');
 ```
 
 Then send a notification by running the following SQL:

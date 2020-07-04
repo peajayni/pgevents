@@ -1,35 +1,42 @@
+import time
 from threading import Thread
 
-import psycopg2
-
+from pgevents import data_access
 from pgevents.app import App
+from pgevents.events import Event
 
 DSN = "dbname=test user=test password=test host=localhost"
 CHANNEL = "foo"
+TOPIC = "test"
 
-
-class EndTest(Exception):
-    pass
+event_id = None
 
 
 def send_notification():
-    connection = psycopg2.connect(DSN)
-    connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-    cursor = connection.cursor()
-    cursor.execute(f"NOTIFY {CHANNEL}")
+    global event_id
+
+    connection = data_access.connect(DSN)
+    with data_access.cursor(connection) as cursor:
+        event_id = data_access.create_event(cursor, TOPIC)["id"]
+        data_access.notify(cursor, CHANNEL)
 
 
 def test_app():
-    app = App(DSN)
+    app = App(DSN, CHANNEL)
 
-    @app.register(CHANNEL)
+    @app.register(TOPIC)
     def handler(event):
-        raise EndTest
+        pass
 
     thread = Thread(target=send_notification)
     thread.start()
 
-    try:
-        app.run()
-    except EndTest:
-        pass
+    now = time.time()
+
+    def continue_for_two_seconds(app):
+        return time.time() < now + 2
+
+    app.run(should_continue=continue_for_two_seconds)
+
+    with data_access.cursor(app.connection) as cursor:
+        assert data_access.get_event(cursor, event_id)["status"] == Event.PROCESSED
