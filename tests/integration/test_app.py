@@ -15,6 +15,8 @@ event_id = None
 def send_notification():
     global event_id
 
+    time.sleep(1)
+
     connection = data_access.connect(DSN)
     with data_access.cursor(connection) as cursor:
         event_id = data_access.create_event(cursor, TOPIC)["id"]
