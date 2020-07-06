@@ -1,6 +1,19 @@
 from unittest.mock import sentinel, MagicMock
 
+import pytest
+
 from pgevents.events import EventStream
+
+
+@pytest.fixture
+def handlers():
+    return dict(foo=MagicMock(), bar=MagicMock())
+
+
+def test_topics(handlers):
+    stream = EventStream(sentinel.connection, handlers)
+
+    assert stream.topics == list(handlers.keys())
 
 
 def test_process():
@@ -34,13 +47,13 @@ def test_process_next_when_not_next():
     assert not stream.process_next()
 
 
-def test_get_next_when_not_next():
+def test_get_next_when_not_next(handlers):
     data_access = MagicMock()
     data_access.get_next_event.return_value = None
-    stream = EventStream(
-        sentinel.connection, sentinel.handlers, data_access=data_access
-    )
+    stream = EventStream(sentinel.connection, handlers, data_access=data_access)
 
     assert stream.get_next(sentinel.cursor) is None
 
-    data_access.get_next_event.assert_called_once_with(sentinel.cursor)
+    data_access.get_next_event.assert_called_once_with(
+        sentinel.cursor, list(handlers.keys())
+    )

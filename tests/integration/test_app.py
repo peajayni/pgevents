@@ -6,27 +6,30 @@ from pgevents.app import App
 from pgevents.events import Event
 
 DSN = "dbname=test user=test password=test host=localhost"
-CHANNEL = "foo"
-TOPIC = "test"
+CHANNEL = "test"
+FOO_TOPIC = "foo"
+BAR_TOPIC = "bar"
 
-event_id = None
+foo_event_id = None
+bar_event_id = None
 
 
 def send_notification():
-    global event_id
+    global foo_event_id, bar_event_id
 
     time.sleep(1)
 
     connection = data_access.connect(DSN)
     with data_access.cursor(connection) as cursor:
-        event_id = data_access.create_event(cursor, TOPIC)["id"]
+        foo_event_id = data_access.create_event(cursor, FOO_TOPIC)["id"]
+        bar_event_id = data_access.create_event(cursor, BAR_TOPIC)["id"]
         data_access.notify(cursor, CHANNEL)
 
 
 def test_app():
     app = App(DSN, CHANNEL)
 
-    @app.register(TOPIC)
+    @app.register(FOO_TOPIC)
     def handler(event):
         pass
 
@@ -41,4 +44,5 @@ def test_app():
     app.run(should_continue=continue_for_two_seconds)
 
     with data_access.cursor(app.connection) as cursor:
-        assert data_access.get_event(cursor, event_id)["status"] == Event.PROCESSED
+        assert data_access.get_event(cursor, foo_event_id)["status"] == Event.PROCESSED
+        assert data_access.get_event(cursor, bar_event_id)["status"] == Event.PENDING

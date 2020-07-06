@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 
 import psycopg2
+from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
 
 
@@ -51,17 +52,19 @@ def get_event(cursor, id):
     return cursor.fetchone()
 
 
-def get_next_event(cursor):
-    cursor.execute(
+def get_next_event(cursor, topics):
+    query = sql.SQL(
         """
         SELECT id, topic, payload
         FROM events
         WHERE status='PENDING'
+        AND topic in ({})
         ORDER BY id
         FOR UPDATE SKIP LOCKED
         LIMIT 1
         """
-    )
+    ).format(sql.SQL(", ").join(sql.Literal(topic) for topic in topics))
+    cursor.execute(query)
     return cursor.fetchone()
 
 

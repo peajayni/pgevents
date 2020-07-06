@@ -11,6 +11,10 @@ class EventStream:
         self.handlers = handlers
         self.data_access = data_access
 
+    @property
+    def topics(self):
+        return list(self.handlers.keys())
+
     def process(self):
         while self.process_next():
             pass
@@ -27,7 +31,7 @@ class EventStream:
                 return True
 
     def get_next(self, cursor):
-        data = self.data_access.get_next_event(cursor)
+        data = self.data_access.get_next_event(cursor, self.topics)
         if not data:
             LOGGER.info("No more events to process")
             return None
