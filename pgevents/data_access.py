@@ -2,7 +2,11 @@ from contextlib import contextmanager
 
 import psycopg2
 from psycopg2 import sql
-from psycopg2.extras import RealDictCursor
+from psycopg2.extensions import register_adapter
+from psycopg2.extras import RealDictCursor, Json
+
+register_adapter(dict, Json)
+register_adapter(list, Json)
 
 
 def connect(dsn):
@@ -40,14 +44,14 @@ def create_event(cursor, topic, payload=None):
     return cursor.fetchone()
 
 
-def get_event(cursor, id):
+def get_event(cursor, event_id):
     cursor.execute(
         """
         SELECT *
         FROM events
         WHERE id=%s
         """,
-        [id],
+        [event_id],
     )
     return cursor.fetchone()
 

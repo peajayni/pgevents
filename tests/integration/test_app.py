@@ -4,8 +4,8 @@ from threading import Thread
 from pgevents import data_access
 from pgevents.app import App
 from pgevents.events import Event
+from tests.integration import DSN
 
-DSN = "dbname=test user=test password=test host=localhost"
 CHANNEL = "test"
 FOO_TOPIC = "foo"
 BAR_TOPIC = "bar"
