@@ -1,6 +1,6 @@
 import logging
 
-from pgevents import data_access, events
+from pgevents import data_access, events, timestamps
 
 LOGGER = logging.getLogger(__name__)
 
@@ -10,9 +10,11 @@ def always_continue(app):
 
 
 class App:
-    def __init__(self, dsn, channel):
+    def __init__(self, dsn, channel, interval=5):
         self.dsn = dsn
         self.channel = channel
+        self.interval = interval
+        self.last_processed = timestamps.EPOCH
 
         self.connection = None
         self.event_stream = None
@@ -28,10 +30,10 @@ class App:
 
     def tick(self):
         if self.should_process_events():
-            self.event_stream.process()
+            self.process_events()
 
     def should_process_events(self):
-        return self.has_received_notification()
+        return self.has_received_notification() or self.has_exceeded_interval()
 
     def has_received_notification(self):
         self.connection.poll()
@@ -42,6 +44,20 @@ class App:
         while self.connection.notifies:
             self.connection.notifies.pop()
         return True
+
+    def has_exceeded_interval(self):
+        time_since_last_process = (
+            timestamps.now() - self.last_processed
+        ).total_seconds()
+        exceeded_interval = time_since_last_process > self.interval
+        if exceeded_interval:
+            LOGGER.debug("Exceeded interval")
+        return exceeded_interval
+
+    def process_events(self):
+        LOGGER.debug("Processing events")
+        self.last_processed = timestamps.now()
+        self.event_stream.process()
 
     def setup(self):
         self.connect()

@@ -1,7 +1,10 @@
+from datetime import datetime, timezone
 from unittest.mock import Mock, sentinel, patch
 
 import pytest
+from freezegun import freeze_time
 
+from pgevents import timestamps
 from pgevents.app import App, always_continue
 from pgevents.events import EventStream
 
@@ -19,6 +22,10 @@ def app():
 
 def test_always_continue():
     assert always_continue(sentinel.app)
+
+
+def test_last_processed(app):
+    assert app.last_processed == timestamps.EPOCH
 
 
 def test_run(app):
@@ -54,11 +61,30 @@ def test_tick_when_should_not_process_events(app):
 
 
 @pytest.mark.parametrize(
-    ["has_received_notification", "expected"], [[True, True], [False, False]]
+    ["has_received_notification", "has_exceeded_interval", "expected"],
+    [
+        [True, True, True],
+        [True, False, True],
+        [False, True, True],
+        [False, False, False],
+    ],
 )
-def test_should_process_events(app, has_received_notification, expected):
+def test_should_process_events(
+    app, has_received_notification, has_exceeded_interval, expected
+):
     app.has_received_notification = Mock(return_value=has_received_notification)
+    app.has_exceeded_interval = Mock(return_value=has_exceeded_interval)
+
     assert app.should_process_events() == expected
+
+
+@freeze_time("2020-07-10 22:00")
+def test_process_events(app):
+    app.event_stream = Mock()
+    app.process_events()
+
+    app.event_stream.process.assert_called_once()
+    assert app.last_processed == timestamps.now()
 
 
 def test_has_received_notification_when_notification(app):
@@ -79,6 +105,21 @@ def test_has_received_notification_when_no_notification(app):
 
     app.connection.poll.assert_called_once()
     assert app.connection.notifies == []
+
+
+@pytest.mark.parametrize(
+    ["last_processed", "expected"],
+    [
+        [datetime(2020, 7, 10, 21, 59, 49, tzinfo=timezone.utc), True],
+        [datetime(2020, 7, 10, 21, 59, 50, tzinfo=timezone.utc), False],
+    ],
+)
+@freeze_time("2020-07-10 22:00")
+def test_has_exceeded_interval_when_has(app, last_processed, expected):
+    app.interval = 10
+    app.last_processed = last_processed
+
+    assert app.has_exceeded_interval() == expected
 
 
 def test_setup(app):

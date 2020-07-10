@@ -1,9 +1,7 @@
 from unittest.mock import sentinel, MagicMock
 
 import pytest
-from freezegun import freeze_time
 
-from pgevents import timestamps
 from pgevents.events import EventStream
 
 
@@ -12,18 +10,12 @@ def handlers():
     return dict(foo=MagicMock(), bar=MagicMock())
 
 
-def test_last_processed():
-    stream = EventStream(sentinel.connection, sentinel.handlers)
-    assert stream.last_processed == timestamps.EPOCH
-
-
 def test_topics(handlers):
     stream = EventStream(sentinel.connection, handlers)
 
     assert stream.topics == list(handlers.keys())
 
 
-@freeze_time("2020-07-10 22:00")
 def test_process():
     stream = EventStream(sentinel.connection, sentinel.handlers)
     stream.process_next = MagicMock(side_effect=[True, False])
@@ -31,7 +23,6 @@ def test_process():
     stream.process()
 
     assert stream.process_next.call_count == 2
-    assert stream.last_processed == timestamps.now()
 
 
 def test_process_next_when_next():
