@@ -26,8 +26,8 @@ def send_notification():
         data_access.notify(cursor, CHANNEL)
 
 
-def test_app():
-    app = App(DSN, CHANNEL)
+def test_app_processes_due_to_notification():
+    app = App(DSN, CHANNEL, interval=5)
 
     @app.register(FOO_TOPIC)
     def handler(event):
@@ -35,6 +35,32 @@ def test_app():
 
     thread = Thread(target=send_notification)
     thread.start()
+
+    now = time.time()
+
+    def continue_for_two_seconds(app):
+        return time.time() < now + 2
+
+    app.run(should_continue=continue_for_two_seconds)
+
+    with data_access.cursor(app.connection) as cursor:
+        assert data_access.get_event(cursor, foo_event_id)["status"] == Event.PROCESSED
+        assert data_access.get_event(cursor, bar_event_id)["status"] == Event.PENDING
+
+
+def test_app_processes_due_to_interval():
+    global foo_event_id, bar_event_id
+
+    connection = data_access.connect(DSN)
+    with data_access.cursor(connection) as cursor:
+        foo_event_id = data_access.create_event(cursor, FOO_TOPIC)["id"]
+        bar_event_id = data_access.create_event(cursor, BAR_TOPIC)["id"]
+
+    app = App(DSN, CHANNEL, interval=1)
+
+    @app.register(FOO_TOPIC)
+    def handler(event):
+        pass
 
     now = time.time()
 
