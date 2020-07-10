@@ -1,6 +1,6 @@
 import logging
 
-from pgevents import data_access
+from pgevents import data_access, timestamps
 
 LOGGER = logging.getLogger(__name__)
 
@@ -10,12 +10,14 @@ class EventStream:
         self.connection = connection
         self.handlers = handlers
         self.data_access = data_access
+        self.last_processed = timestamps.EPOCH
 
     @property
     def topics(self):
         return list(self.handlers.keys())
 
     def process(self):
+        self.last_processed = timestamps.now()
         while self.process_next():
             pass
 
