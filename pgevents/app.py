@@ -27,12 +27,21 @@ class App:
             self.stop_listening()
 
     def tick(self):
-        self.connection.poll()
-        if self.connection.notifies:
-            LOGGER.debug("Received notification")
-            while self.connection.notifies:
-                self.connection.notifies.pop()
+        if self.should_process_events():
             self.event_stream.process()
+
+    def should_process_events(self):
+        return self.has_received_notification()
+
+    def has_received_notification(self):
+        self.connection.poll()
+        if not self.connection.notifies:
+            return False
+
+        LOGGER.debug("Received notification")
+        while self.connection.notifies:
+            self.connection.notifies.pop()
+        return True
 
     def setup(self):
         self.connect()

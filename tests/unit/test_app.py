@@ -35,28 +35,50 @@ def test_run(app):
     app.stop_listening.assert_called_once()
 
 
-def test_tick_when_notification(app):
-    app.connection = Mock()
-    app.connection.notifies = [sentinel.notification]
+def test_tick_when_should_process_events(app):
+    app.should_process_events = Mock(return_value=True)
     app.event_stream = Mock()
 
     app.tick()
 
-    app.connection.poll.assert_called_once()
-    assert app.connection.notifies == []
     app.event_stream.process.assert_called_once()
 
 
-def test_tick_when_no_notification(app):
-    app.connection = Mock()
-    app.connection.notifies = []
+def test_tick_when_should_not_process_events(app):
+    app.should_process_events = Mock(return_value=False)
     app.event_stream = Mock()
 
     app.tick()
 
+    app.event_stream.process.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ["has_received_notification", "expected"], [[True, True], [False, False]]
+)
+def test_should_process_events(app, has_received_notification, expected):
+    app.has_received_notification = Mock(return_value=has_received_notification)
+    assert app.should_process_events() == expected
+
+
+def test_has_received_notification_when_notification(app):
+    app.connection = Mock()
+    app.connection.notifies = [sentinel.notification]
+
+    assert app.has_received_notification()
+
     app.connection.poll.assert_called_once()
     assert app.connection.notifies == []
-    app.event_stream.process.assert_not_called()
+
+
+def test_has_received_notification_when_no_notification(app):
+    app.connection = Mock()
+    app.connection.notifies = []
+
+    assert not app.has_received_notification()
+
+    app.connection.poll.assert_called_once()
+    assert app.connection.notifies == []
 
 
 def test_setup(app):
