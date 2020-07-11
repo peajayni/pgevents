@@ -3,3 +3,5 @@ pytest>=4.6
 pytest-cov
 coveralls
 freezegun
+wheel
+twine
