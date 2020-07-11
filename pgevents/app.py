@@ -46,13 +46,13 @@ class App:
         return True
 
     def has_exceeded_interval(self):
-        time_since_last_process = (
-            timestamps.now() - self.last_processed
-        ).total_seconds()
-        exceeded_interval = time_since_last_process > self.interval
-        if exceeded_interval:
+        if self.calculate_seconds_since_last_processed() > self.interval:
             LOGGER.debug("Exceeded interval")
-        return exceeded_interval
+            return True
+        return False
+
+    def calculate_seconds_since_last_processed(self):
+        return (timestamps.now() - self.last_processed).total_seconds()
 
     def process_events(self):
         LOGGER.debug("Processing events")

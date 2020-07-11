@@ -108,18 +108,22 @@ def test_has_received_notification_when_no_notification(app):
 
 
 @pytest.mark.parametrize(
-    ["last_processed", "expected"],
-    [
-        [datetime(2020, 7, 10, 21, 59, 49, tzinfo=timezone.utc), True],
-        [datetime(2020, 7, 10, 21, 59, 50, tzinfo=timezone.utc), False],
-    ],
+    ["seconds_since_last_processed", "expected"], [[11, True], [10, False],],
 )
 @freeze_time("2020-07-10 22:00")
-def test_has_exceeded_interval_when_has(app, last_processed, expected):
+def test_has_exceeded_interval(app, seconds_since_last_processed, expected):
     app.interval = 10
-    app.last_processed = last_processed
+    app.calculate_seconds_since_last_processed = Mock(
+        return_value=seconds_since_last_processed
+    )
 
     assert app.has_exceeded_interval() == expected
+
+
+@freeze_time("2020-07-10 22:00")
+def test_calculate_seconds_since_last_processed(app):
+    app.last_processed = datetime(2020, 7, 10, 21, 59, tzinfo=timezone.utc)
+    assert app.calculate_seconds_since_last_processed() == 60
 
 
 def test_setup(app):
