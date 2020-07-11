@@ -1,0 +1,4 @@
+[report]
+exclude_lines =
+    coverage: ignore
+    if __name__ == .__main__.:

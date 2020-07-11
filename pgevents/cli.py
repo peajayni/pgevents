@@ -9,7 +9,7 @@ LOGGER = logging.getLogger(__name__)
 
 @click.group()
 def cli():
-    pass
+    pass  # coverage: ignore
 
 
 @cli.command()
