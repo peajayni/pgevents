@@ -1,0 +1,1 @@
+__version__ = "DETERMINED FROM GIT TAG DURING BUILD"
