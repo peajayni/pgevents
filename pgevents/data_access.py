@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from datetime import timezone
 
 import psycopg2
 from psycopg2 import sql
@@ -9,8 +10,14 @@ register_adapter(dict, Json)
 register_adapter(list, Json)
 
 
+class RealDictTimezoneAwareCursor(RealDictCursor):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tzinfo_factory = lambda _: timezone.utc
+
+
 def connect(dsn):
-    return psycopg2.connect(dsn, cursor_factory=RealDictCursor)
+    return psycopg2.connect(dsn, cursor_factory=RealDictTimezoneAwareCursor)
 
 
 @contextmanager
@@ -32,15 +39,25 @@ def notify(cursor, channel):
     cursor.execute(f"NOTIFY {channel}")
 
 
-def create_event(cursor, topic, payload=None):
-    cursor.execute(
-        """
-        INSERT INTO events (topic, payload)
-        VALUES (%s, %s)
-        RETURNING *
-        """,
-        [topic, payload],
-    )
+def create_event(cursor, topic, payload=None, process_after=None):
+    if process_after:
+        cursor.execute(
+            """
+            INSERT INTO events (topic, payload, process_after)
+            VALUES (%s, %s, %s)
+            RETURNING *
+            """,
+            [topic, payload, process_after],
+        )
+    else:
+        cursor.execute(
+            """
+            INSERT INTO events (topic, payload)
+            VALUES (%s, %s)
+            RETURNING *
+            """,
+            [topic, payload],
+        )
     return cursor.fetchone()
 
 
@@ -62,6 +79,7 @@ def get_next_event(cursor, topics):
         SELECT id, topic, payload
         FROM events
         WHERE status='PENDING'
+        AND process_after < now()
         AND topic in ({})
         ORDER BY id
         FOR UPDATE SKIP LOCKED

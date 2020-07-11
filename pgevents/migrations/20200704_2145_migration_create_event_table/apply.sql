@@ -5,6 +5,7 @@ CREATE TABLE events (
     topic varchar(50) NOT NULL,
     status event_status NOT NULL DEFAULT 'PENDING',
     payload json,
-    created_at timestamp NOT NULL DEFAULT now(),
-    processed_at timestamp
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    process_after timestamp with time zone NOT NULL DEFAULT now(),
+    processed_at timestamp with time zone
 );
