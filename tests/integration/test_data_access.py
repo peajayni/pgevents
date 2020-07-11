@@ -117,13 +117,13 @@ def test_get_next_event(
             cursor, topic, process_after=second_process_after
         )["id"]
 
-    time.sleep(0.5)
+    time.sleep(0.1)
 
     def slow_running():
         local_connection = data_access.connect(DSN)
         with data_access.cursor(local_connection) as cursor:
             event = data_access.get_next_event(cursor, [topic])
-            time.sleep(2)
+            time.sleep(0.5)
             if event:
                 data_access.mark_event_processed(cursor, event["id"])
 
@@ -137,7 +137,7 @@ def test_get_next_event(
     slow_thread = Thread(target=slow_running)
     slow_thread.start()
 
-    time.sleep(0.5)
+    time.sleep(0.1)
 
     fast_thread = Thread(target=fast_running)
     fast_thread.start()
