@@ -103,3 +103,11 @@ def mark_event_processed(cursor, event_id):
 
 def truncate_events(cursor):
     cursor.execute("TRUNCATE events")
+
+
+def drop_table(cursor, name):
+    cursor.execute(f"DROP TABLE IF EXISTS {name}")
+
+
+def drop_type(cursor, name):
+    cursor.execute(f"DROP TYPE IF EXISTS {name}")

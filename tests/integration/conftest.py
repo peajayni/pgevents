@@ -1,12 +1,12 @@
 import pytest
 
 from pgevents import data_access
+from tests.integration import DSN
 
 
 @pytest.fixture()
 def connection():
-    dsn = "dbname=test user=test password=test host=localhost"
-    connection = data_access.connect(dsn)
+    connection = data_access.connect(DSN)
     yield connection
     connection.close()
 

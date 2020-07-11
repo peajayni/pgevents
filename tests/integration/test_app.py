@@ -26,7 +26,19 @@ def send_notification():
         data_access.notify(cursor, CHANNEL)
 
 
-def test_app_processes_due_to_notification():
+def test_init_db(connection):
+    with data_access.cursor(connection) as cursor:
+        data_access.drop_table(cursor, "pgmigrations")
+        data_access.drop_table(cursor, "events")
+        data_access.drop_type(cursor, "event_status")
+    app = App(DSN, None)
+    app.init_db()
+
+    with data_access.cursor(connection) as cursor:
+        data_access.create_event(cursor, FOO_TOPIC)
+
+
+def test_run_processes_due_to_notification():
     app = App(DSN, CHANNEL, interval=5)
 
     @app.register(FOO_TOPIC)
@@ -48,7 +60,7 @@ def test_app_processes_due_to_notification():
         assert data_access.get_event(cursor, bar_event_id)["status"] == Event.PENDING
 
 
-def test_app_processes_due_to_interval():
+def test_run_processes_due_to_interval():
     global foo_event_id, bar_event_id
 
     connection = data_access.connect(DSN)

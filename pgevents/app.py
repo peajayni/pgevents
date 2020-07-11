@@ -1,9 +1,13 @@
 import logging
+import pathlib
+
+import pgmigrations
 
 from pgevents import data_access, events
 from pgevents.utils import timestamps
 
 LOGGER = logging.getLogger(__name__)
+MIGRATIONS_DIRECTORY = pathlib.Path(__file__).parent.absolute() / "migrations"
 
 
 def always_continue(app):
@@ -20,6 +24,13 @@ class App:
         self.connection = None
         self.event_stream = None
         self.handlers = {}
+
+    def init_db(self):
+        migrations = pgmigrations.Migrations(
+            self.dsn, base_directory=MIGRATIONS_DIRECTORY
+        )
+        migrations.init()
+        migrations.apply()
 
     def run(self, should_continue=always_continue):
         self.setup()
