@@ -1,7 +1,7 @@
 import pathlib
 import re
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def get_version(package):
@@ -26,7 +26,7 @@ def get_long_description():
 setup(
     name="pgevents",
     version=get_version("pgevents"),
-    packages=["pgevents"],
+    packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=get_requirements(),
     description="Python event framework using PostgreSQL listen/notify",
     long_description=get_long_description(),
