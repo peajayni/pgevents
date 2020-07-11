@@ -4,7 +4,8 @@ from threading import Thread
 
 import pytest
 
-from pgevents import data_access, timestamps
+from pgevents import data_access
+from pgevents.utils import timestamps
 from pgevents.events import Event
 from tests.integration import DSN
 

@@ -1,6 +1,7 @@
 import logging
 
-from pgevents import data_access, events, timestamps
+from pgevents import data_access, events
+from pgevents.utils import timestamps
 
 LOGGER = logging.getLogger(__name__)
 

@@ -1,6 +1,6 @@
 from datetime import timezone
 
-from pgevents import timestamps
+from pgevents.utils import timestamps
 
 
 def test_epoch():

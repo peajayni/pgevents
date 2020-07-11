@@ -4,7 +4,7 @@ from unittest.mock import Mock, sentinel, patch
 import pytest
 from freezegun import freeze_time
 
-from pgevents import timestamps
+from pgevents.utils import timestamps
 from pgevents.app import App, always_continue
 from pgevents.events import EventStream
 
