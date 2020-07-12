@@ -17,9 +17,11 @@ topic = "bar"       # Event topic for handler to respond to
 
 app = App(dsn, channel)
 
+
 @app.register(topic)
-def handler(event):
-    print(f"Received event {event}")
+def handler(context):
+    print("Handling event")
+
 
 app.run()
 ```

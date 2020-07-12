@@ -1,6 +1,7 @@
 import logging
 
 from pgevents import data_access
+from pgevents.context import Context
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +27,8 @@ class EventStream:
                 if not event:
                     return False
                 handler = self.handlers[event.topic]
-                handler(event)
+                context = self.create_context(event, cursor)
+                handler(context)
                 event.mark_processed(cursor)
                 return True
 
@@ -36,6 +38,9 @@ class EventStream:
             LOGGER.info("No more events to process")
             return None
         return Event(data["id"], data["topic"], data["payload"])
+
+    def create_context(self, event, cursor):
+        return Context(event, cursor)
 
     def __eq__(self, other):
         return (

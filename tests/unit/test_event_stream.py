@@ -27,15 +27,20 @@ def test_process():
 
 def test_process_next_when_next():
     connection = MagicMock()
+    cursor = connection.cursor.return_value.__enter__.return_value
+    context = MagicMock()
     event = MagicMock()
     handler = MagicMock()
     handlers = {event.topic: handler}
     stream = EventStream(connection, handlers)
     stream.get_next = MagicMock(return_value=event)
+    stream.create_context = MagicMock(return_value=context)
 
     assert stream.process_next()
 
-    handler.assert_called_once_with(event)
+    stream.create_context.assert_called_once_with(event, cursor)
+
+    handler.assert_called_once_with(context)
     event.mark_processed.assert_called_once()
 
 
