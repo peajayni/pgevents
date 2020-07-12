@@ -38,7 +38,7 @@ class EventStream:
         if not data:
             LOGGER.info("No more events to process")
             return None
-        return Event(data["id"], data["topic"], data["payload"])
+        return Event(id=data["id"], topic=data["topic"], payload=data["payload"])
 
     def create_context(self, event, cursor):
         return Context(event, cursor)

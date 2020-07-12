@@ -1,27 +1,23 @@
-from unittest.mock import Mock, sentinel
+from unittest.mock import sentinel, patch
+
+import pytest
 
 from pgevents.event import Event
 
 
-def test_equality_when_equal():
-    event0 = Event(sentinel.id, sentinel.topic, sentinel.payload0)
-    event1 = Event(sentinel.id, sentinel.topic, sentinel.payload1)
-
-    assert event0 == event1
-
-
-def test_equality_when_not_equal():
-    event0 = Event(sentinel.id0, sentinel.topic, sentinel.payload)
-    event1 = Event(sentinel.id1, sentinel.topic, sentinel.payload)
-
-    assert event0 != event1
+@pytest.fixture
+def data_access():
+    with patch("pgevents.event.data_access") as data_access:
+        yield data_access
 
 
-def test_mark_processed():
-    data_access = Mock()
-    event = Event(
-        sentinel.id, sentinel.topic, sentinel.payload, data_access=data_access
-    )
+def test_instantiate_just_topic():
+    event = Event(topic=sentinel.topic)
+    assert event.topic == sentinel.topic
+
+
+def test_mark_processed(data_access):
+    event = Event(id=sentinel.id, topic=sentinel.topic, payload=sentinel.payload)
 
     event.mark_processed(sentinel.cursor)
 
