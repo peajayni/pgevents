@@ -96,14 +96,18 @@ class App:
 
     def register(self, topic):
         def decorator(func):
-            LOGGER.debug("Registering %s on topic: %s", func.__name__, topic)
+            LOGGER.debug(
+                "Registering handler '%s' to topic: '%s'", func.__name__, topic
+            )
             self.handlers[topic] = func
             return func
 
         return decorator
 
     def unregister(self, topic, func):
-        LOGGER.debug("Unregistering %s on topic: %s", func, topic)
+        LOGGER.debug(
+            "Unregistering handler '%s' from topic: '%s'", func.__name__, topic
+        )
         try:
             del self.handlers[topic]
         except KeyError:

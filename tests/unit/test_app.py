@@ -212,6 +212,8 @@ def test_register(app):
 
 def test_unregister_when_registered(app):
     func = Mock()
+    func.__name__ = sentinel.name
+
     app.handlers = {sentinel.topic: func}
 
     app.unregister(sentinel.topic, func)
@@ -222,6 +224,8 @@ def test_unregister_when_registered(app):
 
 def test_unregister_when_not_registered(app):
     func = Mock()
+    func.__name__ = sentinel.name
+
     app.handlers = {}
 
     app.unregister(sentinel.topic, func)
