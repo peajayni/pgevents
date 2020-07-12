@@ -99,7 +99,8 @@ def mark_event_processed(cursor, event_id):
     cursor.execute(
         """
         UPDATE events
-        SET status='PROCESSED'
+        SET status='PROCESSED',
+        processed_at=now()
         WHERE id=%s
         """,
         [event_id],

@@ -151,10 +151,8 @@ def test_mark_event_processed():
     event = Event(topic="foo")
     with data_access.cursor(connection) as cursor:
         created = data_access.create_event(cursor, event)
-
-    with data_access.cursor(connection) as cursor:
-        retrieved = data_access.get_event_by_id(cursor, created.id)
-        assert retrieved.status == PENDING
+        assert created.status == PENDING
+        assert created.processed_at == None
 
     with data_access.cursor(connection) as cursor:
         data_access.mark_event_processed(cursor, created.id)
@@ -162,3 +160,4 @@ def test_mark_event_processed():
     with data_access.cursor(connection) as cursor:
         retrieved = data_access.get_event_by_id(cursor, created.id)
         assert retrieved.status == PROCESSED
+        assert retrieved.processed_at is not None
