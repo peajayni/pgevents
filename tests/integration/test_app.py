@@ -1,8 +1,9 @@
 import time
 from threading import Thread
 
-from pgevents import data_access, event
+from pgevents import data_access
 from pgevents.app import App
+from pgevents.event import Event, PROCESSED, PENDING
 from tests.integration import DSN
 
 CHANNEL = "test"
@@ -20,8 +21,8 @@ def send_notification():
 
     connection = data_access.connect(DSN)
     with data_access.cursor(connection) as cursor:
-        foo_event_id = data_access.create_event(cursor, FOO_TOPIC)["id"]
-        bar_event_id = data_access.create_event(cursor, BAR_TOPIC)["id"]
+        foo_event_id = data_access.create_event(cursor, Event(topic=FOO_TOPIC)).id
+        bar_event_id = data_access.create_event(cursor, Event(topic=BAR_TOPIC)).id
         data_access.notify(cursor, CHANNEL)
 
 
@@ -32,28 +33,27 @@ def test_init_db(connection):
         data_access.drop_type(cursor, "event_status")
     app = App(DSN, None)
     app.init_db()
-
+    event = Event(topic=FOO_TOPIC)
     with data_access.cursor(connection) as cursor:
-        data_access.create_event(cursor, FOO_TOPIC)
+        data_access.create_event(cursor, event)
 
 
 def test_create_event(connection):
     app = App(DSN, None)
-    topic = "foo"
-    payload = dict(hello="world")
-    created_id = app.create_event(topic, payload)["id"]
+    event = Event(topic=FOO_TOPIC, payload=dict(hello="world"))
+    created = app.create_event(event)
 
     with data_access.cursor(connection) as cursor:
-        retrieved_id = data_access.get_event(cursor, created_id)["id"]
+        retrieved = data_access.get_event_by_id(cursor, created.id)
 
-    assert created_id == retrieved_id
+    assert created == retrieved
 
 
 def test_run_processes_due_to_notification():
     app = App(DSN, CHANNEL, interval=5)
 
     @app.register(FOO_TOPIC)
-    def handler(event):
+    def handler(context):
         pass
 
     thread = Thread(target=send_notification)
@@ -67,8 +67,8 @@ def test_run_processes_due_to_notification():
     app.run(should_continue=continue_for_two_seconds)
 
     with data_access.cursor(app.connection) as cursor:
-        assert data_access.get_event(cursor, foo_event_id)["status"] == event.PROCESSED
-        assert data_access.get_event(cursor, bar_event_id)["status"] == event.PENDING
+        assert data_access.get_event_by_id(cursor, foo_event_id).status == PROCESSED
+        assert data_access.get_event_by_id(cursor, bar_event_id).status == PENDING
 
 
 def test_run_processes_due_to_interval():
@@ -76,13 +76,13 @@ def test_run_processes_due_to_interval():
 
     connection = data_access.connect(DSN)
     with data_access.cursor(connection) as cursor:
-        foo_event_id = data_access.create_event(cursor, FOO_TOPIC)["id"]
-        bar_event_id = data_access.create_event(cursor, BAR_TOPIC)["id"]
+        foo_event_id = data_access.create_event(cursor, Event(topic=FOO_TOPIC)).id
+        bar_event_id = data_access.create_event(cursor, Event(topic=BAR_TOPIC)).id
 
     app = App(DSN, CHANNEL, interval=1)
 
     @app.register(FOO_TOPIC)
-    def handler(event):
+    def handler(context):
         pass
 
     now = time.time()
@@ -93,5 +93,5 @@ def test_run_processes_due_to_interval():
     app.run(should_continue=continue_for_two_seconds)
 
     with data_access.cursor(app.connection) as cursor:
-        assert data_access.get_event(cursor, foo_event_id)["status"] == event.PROCESSED
-        assert data_access.get_event(cursor, bar_event_id)["status"] == event.PENDING
+        assert data_access.get_event_by_id(cursor, foo_event_id).status == PROCESSED
+        assert data_access.get_event_by_id(cursor, bar_event_id).status == PENDING

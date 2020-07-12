@@ -2,7 +2,6 @@ import logging
 
 from pgevents import data_access
 from pgevents.context import Context
-from pgevents.event import Event
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,11 +33,10 @@ class EventStream:
                 return True
 
     def get_next(self, cursor):
-        data = self.data_access.get_next_event(cursor, self.topics)
-        if not data:
+        event = self.data_access.get_next_event(cursor, self.topics)
+        if not event:
             LOGGER.info("No more events to process")
-            return None
-        return Event(id=data["id"], topic=data["topic"], payload=data["payload"])
+        return event
 
     def create_context(self, event, cursor):
         return Context(event, cursor)

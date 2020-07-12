@@ -32,10 +32,10 @@ class App:
         migrations.init()
         migrations.apply()
 
-    def create_event(self, topic, payload):
+    def create_event(self, event):
         self.connect()
         with data_access.cursor(self.connection) as cursor:
-            return data_access.create_event(cursor, topic, payload)
+            return data_access.create_event(cursor, event)
 
     def run(self, should_continue=always_continue):
         self.connect()

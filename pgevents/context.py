@@ -6,7 +6,5 @@ class Context:
         self.event = event
         self.cursor = cursor
 
-    def create_event(self, topic, payload=None, process_after=None):
-        return data_access.create_event(
-            self.cursor, topic, payload=payload, process_after=process_after
-        )
+    def create_event(self, event):
+        return data_access.create_event(self.cursor, event)

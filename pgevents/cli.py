@@ -3,6 +3,7 @@ import logging
 
 import click
 
+from pgevents.event import Event
 from pgevents.utils import app_loader
 
 LOGGER = logging.getLogger(__name__)
@@ -36,8 +37,8 @@ def run(path):
 @click.option("--payload", default=None)
 def create_event(path, topic, payload):
     app = app_loader.load(path)
-    parsed_payload = json.loads(payload)
-    app.create_event(topic, parsed_payload)
+    event = Event(topic=topic, payload=json.loads(payload))
+    app.create_event(topic, event)
 
 
 if __name__ == "__main__":

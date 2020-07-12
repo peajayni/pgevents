@@ -53,13 +53,12 @@ def test_create_event(app, data_access):
     app.connect = Mock()
     cursor = data_access.cursor.return_value.__enter__.return_value
 
-    app.create_event(sentinel.topic, sentinel.payload)
+    event = Mock()
+    app.create_event(event)
 
     app.connect.assert_called_once()
     data_access.cursor.assert_called_once_with(sentinel.connection)
-    data_access.create_event.assert_called_once_with(
-        cursor, sentinel.topic, sentinel.payload
-    )
+    data_access.create_event.assert_called_once_with(cursor, event)
 
 
 def test_run(app):

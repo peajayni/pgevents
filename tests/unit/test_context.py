@@ -22,10 +22,7 @@ def test_init(context):
 
 
 def test_create_event(context, data_access):
-    context.create_event(sentinel.topic, sentinel.payload, sentinel.process_after)
+    context.create_event(sentinel.event)
     data_access.create_event.assert_called_once_with(
-        sentinel.cursor,
-        sentinel.topic,
-        payload=sentinel.payload,
-        process_after=sentinel.process_after,
+        sentinel.cursor, sentinel.event,
     )

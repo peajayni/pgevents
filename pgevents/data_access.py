@@ -6,6 +6,8 @@ from psycopg2 import sql
 from psycopg2.extensions import register_adapter
 from psycopg2.extras import RealDictCursor, Json
 
+from pgevents.event import Event
+
 register_adapter(dict, Json)
 register_adapter(list, Json)
 
@@ -39,15 +41,15 @@ def notify(cursor, channel):
     cursor.execute(f"NOTIFY {channel}")
 
 
-def create_event(cursor, topic, payload=None, process_after=None):
-    if process_after:
+def create_event(cursor, event):
+    if event.process_after:
         cursor.execute(
             """
             INSERT INTO events (topic, payload, process_after)
             VALUES (%s, %s, %s)
             RETURNING *
             """,
-            [topic, payload, process_after],
+            [event.topic, event.payload, event.process_after],
         )
     else:
         cursor.execute(
@@ -56,12 +58,12 @@ def create_event(cursor, topic, payload=None, process_after=None):
             VALUES (%s, %s)
             RETURNING *
             """,
-            [topic, payload],
+            [event.topic, event.payload],
         )
-    return cursor.fetchone()
+    return Event.from_dict(cursor.fetchone())
 
 
-def get_event(cursor, event_id):
+def get_event_by_id(cursor, event_id):
     cursor.execute(
         """
         SELECT *
@@ -70,13 +72,13 @@ def get_event(cursor, event_id):
         """,
         [event_id],
     )
-    return cursor.fetchone()
+    return Event.from_dict(cursor.fetchone())
 
 
 def get_next_event(cursor, topics):
     query = sql.SQL(
         """
-        SELECT id, topic, payload
+        SELECT *
         FROM events
         WHERE status='PENDING'
         AND process_after < now()
@@ -87,7 +89,10 @@ def get_next_event(cursor, topics):
         """
     ).format(sql.SQL(", ").join(sql.Literal(topic) for topic in topics))
     cursor.execute(query)
-    return cursor.fetchone()
+    data = cursor.fetchone()
+    if not data:
+        return None
+    return Event.from_dict(data)
 
 
 def mark_event_processed(cursor, event_id):
