@@ -3,7 +3,7 @@ from threading import Thread
 
 from pgevents import data_access
 from pgevents.app import App
-from pgevents.events import Event
+from pgevents.event import Event
 from tests.integration import DSN
 
 CHANNEL = "test"

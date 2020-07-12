@@ -6,7 +6,7 @@ from freezegun import freeze_time
 
 from pgevents.utils import timestamps
 from pgevents.app import App, always_continue, MIGRATIONS_DIRECTORY
-from pgevents.events import EventStream
+from pgevents.event_stream import EventStream
 
 
 @pytest.fixture

@@ -3,7 +3,7 @@ import pathlib
 
 import pgmigrations
 
-from pgevents import data_access, events
+from pgevents import data_access, event_stream
 from pgevents.utils import timestamps
 
 LOGGER = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ class App:
         self.connection = data_access.connect(self.dsn)
 
     def setup_event_stream(self):
-        self.event_stream = events.EventStream(self.connection, self.handlers)
+        self.event_stream = event_stream.EventStream(self.connection, self.handlers)
 
     def start_listening(self):
         LOGGER.debug("Starting to listen on channel: %s", self.channel)

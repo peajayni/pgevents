@@ -5,7 +5,8 @@ from concurrent.futures.thread import ThreadPoolExecutor
 import pytest
 
 from pgevents import data_access
-from pgevents.events import EventStream, Event
+from pgevents.event import Event
+from pgevents.event_stream import EventStream
 
 QUEUE = queue.Queue()
 HANDLER_SLEEP_TIME = 2

@@ -1,7 +1,7 @@
 import pytest
 
 from pgevents import data_access
-from pgevents.events import Event
+from pgevents.event import Event
 
 
 @pytest.fixture()

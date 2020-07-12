@@ -2,7 +2,7 @@ from unittest.mock import sentinel, MagicMock
 
 import pytest
 
-from pgevents.events import EventStream
+from pgevents.event_stream import EventStream
 
 
 @pytest.fixture

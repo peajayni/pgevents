@@ -1,6 +1,6 @@
 from unittest.mock import Mock, sentinel
 
-from pgevents.events import Event
+from pgevents.event import Event
 
 
 def test_equality_when_equal():

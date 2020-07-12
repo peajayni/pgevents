@@ -6,7 +6,7 @@ import pytest
 
 from pgevents import data_access
 from pgevents.utils import timestamps
-from pgevents.events import Event
+from pgevents.event import Event
 from tests.integration import DSN
 
 
