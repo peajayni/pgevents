@@ -32,8 +32,15 @@ class App:
         migrations.init()
         migrations.apply()
 
+    def create_event(self, topic, payload):
+        self.connect()
+        with data_access.cursor(self.connection) as cursor:
+            return data_access.create_event(cursor, topic, payload)
+
     def run(self, should_continue=always_continue):
-        self.setup()
+        self.connect()
+        self.setup_event_stream()
+        self.start_listening()
         try:
             while should_continue(self):
                 self.tick()
@@ -59,7 +66,7 @@ class App:
 
     def has_exceeded_interval(self):
         if self.calculate_seconds_since_last_processed() > self.interval:
-            LOGGER.debug("Exceeded interval")
+            LOGGER.debug(f"Exceeded interval of {self.interval} seconds")
             return True
         return False
 
@@ -70,11 +77,6 @@ class App:
         LOGGER.debug("Processing events")
         self.last_processed = timestamps.now()
         self.event_stream.process()
-
-    def setup(self):
-        self.connect()
-        self.setup_event_stream()
-        self.start_listening()
 
     def connect(self):
         self.connection = data_access.connect(self.dsn)
@@ -94,7 +96,7 @@ class App:
 
     def register(self, topic):
         def decorator(func):
-            LOGGER.debug("Registering %s on topic: %s", func, topic)
+            LOGGER.debug("Registering %s on topic: %s", func.__name__, topic)
             self.handlers[topic] = func
             return func
 

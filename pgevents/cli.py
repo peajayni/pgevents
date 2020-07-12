@@ -1,3 +1,4 @@
+import json
 import logging
 
 import click
@@ -27,6 +28,16 @@ def run(path):
     LOGGER.info("Running app: %s", path)
     app = app_loader.load(path)
     app.run()
+
+
+@cli.command()
+@click.argument("path")
+@click.argument("topic")
+@click.option("--payload", default=None)
+def create_event(path, topic, payload):
+    app = app_loader.load(path)
+    parsed_payload = json.loads(payload)
+    app.create_event(topic, parsed_payload)
 
 
 if __name__ == "__main__":

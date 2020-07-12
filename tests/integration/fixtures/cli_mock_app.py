@@ -17,6 +17,9 @@ class MockApp:
     def init_db(self):
         pathlib.Path("init_db").touch()
 
+    def create_event(self, topic, payload):
+        pathlib.Path("create_event").touch()
+
     def assert_called(self, method):
         name = method.__name__
         assert pathlib.Path(name).exists(), f"Method {name} was not called"

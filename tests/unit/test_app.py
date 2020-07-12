@@ -48,8 +48,24 @@ def test_init_db(app, pgmigrations):
     migrations.apply.assert_called_once()
 
 
+def test_create_event(app, data_access):
+    app.connection = sentinel.connection
+    app.connect = Mock()
+    cursor = data_access.cursor.return_value.__enter__.return_value
+
+    app.create_event(sentinel.topic, sentinel.payload)
+
+    app.connect.assert_called_once()
+    data_access.cursor.assert_called_once_with(sentinel.connection)
+    data_access.create_event.assert_called_once_with(
+        cursor, sentinel.topic, sentinel.payload
+    )
+
+
 def test_run(app):
-    app.setup = Mock()
+    app.connect = Mock()
+    app.setup_event_stream = Mock()
+    app.start_listening = Mock()
     app.tick = Mock()
     app.stop_listening = Mock()
 
@@ -57,7 +73,9 @@ def test_run(app):
 
     app.run(should_continue=should_continue)
 
-    app.setup.assert_called_once()
+    app.connect.assert_called_once()
+    app.setup_event_stream.assert_called_once()
+    app.start_listening.assert_called_once()
     app.tick.assert_called_once()
     app.stop_listening.assert_called_once()
 
@@ -146,18 +164,6 @@ def test_calculate_seconds_since_last_processed(app):
     assert app.calculate_seconds_since_last_processed() == 60
 
 
-def test_setup(app):
-    app.connect = Mock()
-    app.setup_event_stream = Mock()
-    app.start_listening = Mock()
-
-    app.setup()
-
-    app.connect.assert_called_once()
-    app.setup_event_stream.assert_called_once()
-    app.start_listening.assert_called_once()
-
-
 def test_connect(app, data_access):
     app.connect()
 
@@ -196,6 +202,7 @@ def test_stop_listening(app, data_access):
 
 def test_register(app):
     func = Mock()
+    func.__name__ = sentinel.name
 
     decorator = app.register(sentinel.topic)
 

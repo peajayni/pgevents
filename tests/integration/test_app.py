@@ -38,6 +38,18 @@ def test_init_db(connection):
         data_access.create_event(cursor, FOO_TOPIC)
 
 
+def test_create_event(connection):
+    app = App(DSN, None)
+    topic = "foo"
+    payload = dict(hello="world")
+    created_id = app.create_event(topic, payload)["id"]
+
+    with data_access.cursor(connection) as cursor:
+        retrieved_id = data_access.get_event(cursor, created_id)["id"]
+
+    assert created_id == retrieved_id
+
+
 def test_run_processes_due_to_notification():
     app = App(DSN, CHANNEL, interval=5)
 

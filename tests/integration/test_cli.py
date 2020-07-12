@@ -1,3 +1,4 @@
+import json
 import os
 import pathlib
 import tempfile
@@ -5,7 +6,7 @@ import tempfile
 import pytest
 from click.testing import CliRunner
 
-from pgevents.cli import init_db, run
+from pgevents.cli import init_db, run, create_event
 from tests.integration.fixtures.cli_mock_app import app
 
 BASE_DIRECTORY = pathlib.Path(__file__).parent.absolute()
@@ -39,14 +40,24 @@ def app_path():
 
 
 def test_cli_init_db(workspace, runner, app_path):
-    result = runner.invoke(init_db, app_path)
+    cli_args = [app_path]
+    result = runner.invoke(init_db, cli_args)
     assert result.exit_code == 0
 
     app.assert_called(app.init_db)
 
 
 def test_cli_run(workspace, runner, app_path):
-    result = runner.invoke(run, app_path)
+    cli_args = [app_path]
+    result = runner.invoke(run, cli_args)
     assert result.exit_code == 0
 
     app.assert_called(app.run)
+
+
+def test_cli_create_event(workspace, runner, app_path):
+    cli_args = [app_path, "topic", "--payload", json.dumps("hello")]
+    result = runner.invoke(create_event, cli_args)
+    assert result.exit_code == 0
+
+    app.assert_called(app.create_event)
