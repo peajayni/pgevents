@@ -5,7 +5,7 @@ import pytest
 from freezegun import freeze_time
 
 from pgevents.utils import timestamps
-from pgevents.app import App, always_continue, MIGRATIONS_DIRECTORY
+from pgevents.app import App, always_continue
 from pgevents.event_stream import EventStream
 
 
@@ -20,45 +20,12 @@ def app():
     return App(dsn=sentinel.dsn, channel=sentinel.channel)
 
 
-@pytest.fixture
-def pgmigrations(monkeypatch):
-    pgmigrations = Mock()
-    monkeypatch.setattr("pgevents.app.pgmigrations", pgmigrations)
-    return pgmigrations
-
-
 def test_always_continue():
     assert always_continue(sentinel.app)
 
 
 def test_last_processed(app):
     assert app.last_processed == timestamps.EPOCH
-
-
-def test_init_db(app, pgmigrations):
-    app.init_db()
-
-    pgmigrations.Migrations.assert_called_once_with(
-        app.dsn, base_directory=MIGRATIONS_DIRECTORY
-    )
-
-    migrations = pgmigrations.Migrations.return_value
-
-    migrations.init.assert_called_once()
-    migrations.apply.assert_called_once()
-
-
-def test_create_event(app, data_access):
-    app.connection = sentinel.connection
-    app.connect = Mock()
-    cursor = data_access.cursor.return_value.__enter__.return_value
-
-    event = Mock()
-    app.create_event(event)
-
-    app.connect.assert_called_once()
-    data_access.cursor.assert_called_once_with(sentinel.connection)
-    data_access.create_event.assert_called_once_with(cursor, event)
 
 
 def test_run(app):

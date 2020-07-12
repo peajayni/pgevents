@@ -1,63 +1,37 @@
 import json
-import os
 import pathlib
-import tempfile
 
-import pytest
-from click.testing import CliRunner
 
-from pgevents.cli import init_db, run, create_event
-from tests.integration.fixtures.cli_mock_app import app
+from pgevents import data_access, App, cli
+from pgevents.event import Event
+from tests.integration import DSN
 
 BASE_DIRECTORY = pathlib.Path(__file__).parent.absolute()
 
-
-@pytest.fixture
-def workspace():
-    original = os.getcwd()
-    with tempfile.TemporaryDirectory() as workspace:
-        workspace = pathlib.Path(workspace)
-        copy_app_script_to_workspace(workspace)
-        os.chdir(workspace)
-        yield workspace
-        os.chdir(original)
+app = App(DSN, None)
 
 
-def copy_app_script_to_workspace(workspace):
-    source_script = BASE_DIRECTORY / "fixtures" / "cli_mock_app.py"
-    target_script = workspace / "app.py"
-    target_script.write_text(source_script.read_text())
+def test_init_db(connection):
+
+    with data_access.cursor(connection) as cursor:
+        data_access.drop_table(cursor, "pgmigrations")
+        data_access.drop_table(cursor, "events")
+        data_access.drop_type(cursor, "event_status")
+
+    cli.init_db("tests.integration.test_cli")
+
+    event = Event(topic="hello")
+    with data_access.cursor(connection) as cursor:
+        data_access.create_event(cursor, event)
 
 
-@pytest.fixture
-def runner():
-    return CliRunner()
+def test_create_event(connection):
+    topic = "hello"
+    payload = json.dumps(dict(hello="world"))
+    created = cli.create_event("tests.integration.test_cli", topic, payload)
 
+    with data_access.cursor(connection) as cursor:
+        retrieved = data_access.get_event_by_id(cursor, created.id)
 
-@pytest.fixture
-def app_path():
-    return "app:app"
-
-
-def test_cli_init_db(workspace, runner, app_path):
-    cli_args = [app_path]
-    result = runner.invoke(init_db, cli_args)
-    assert result.exit_code == 0
-
-    app.assert_called(app.init_db)
-
-
-def test_cli_run(workspace, runner, app_path):
-    cli_args = [app_path]
-    result = runner.invoke(run, cli_args)
-    assert result.exit_code == 0
-
-    app.assert_called(app.run)
-
-
-def test_cli_create_event(workspace, runner, app_path):
-    cli_args = [app_path, "topic", "--payload", json.dumps("hello")]
-    result = runner.invoke(create_event, cli_args)
-    assert result.exit_code == 0
-
-    app.assert_called(app.create_event)
+    assert retrieved.topic == topic
+    assert retrieved.payload == json.loads(payload)

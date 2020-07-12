@@ -26,29 +26,6 @@ def send_notification():
         data_access.notify(cursor, CHANNEL)
 
 
-def test_init_db(connection):
-    with data_access.cursor(connection) as cursor:
-        data_access.drop_table(cursor, "pgmigrations")
-        data_access.drop_table(cursor, "events")
-        data_access.drop_type(cursor, "event_status")
-    app = App(DSN, None)
-    app.init_db()
-    event = Event(topic=FOO_TOPIC)
-    with data_access.cursor(connection) as cursor:
-        data_access.create_event(cursor, event)
-
-
-def test_create_event(connection):
-    app = App(DSN, None)
-    event = Event(topic=FOO_TOPIC, payload=dict(hello="world"))
-    created = app.create_event(event)
-
-    with data_access.cursor(connection) as cursor:
-        retrieved = data_access.get_event_by_id(cursor, created.id)
-
-    assert created == retrieved
-
-
 def test_run_processes_due_to_notification():
     app = App(DSN, CHANNEL, interval=5)
 
