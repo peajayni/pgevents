@@ -32,7 +32,7 @@ setup(
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
     url="https://github.com/peajayni/pgevents",
-    python_requires=">=3.6",
+    python_requires=">=3.7",
     entry_points={"console_scripts": ["pgevents=pgevents.cli:cli",],},
     package_data={"pgevents": ["migrations/**/*"],},
 )
