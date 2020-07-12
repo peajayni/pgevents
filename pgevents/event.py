@@ -3,18 +3,15 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Any
 
-from pgevents import data_access
+from pgevents import data_access, constants
 
 LOGGER = logging.getLogger(__name__)
-
-PENDING = "PENDING"
-PROCESSED = "PROCESSED"
 
 
 @dataclass
 class Event:
     topic: str
-    status: str = PENDING
+    status: str = constants.PENDING
     id: Optional[int] = None
     payload: Optional[Any] = None
     created_at: Optional[datetime] = None

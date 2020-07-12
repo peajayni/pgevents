@@ -3,7 +3,6 @@ from unittest.mock import Mock, sentinel, MagicMock
 import pytest
 
 from pgevents import cli
-from pgevents.cli import MIGRATIONS_DIRECTORY
 from pgevents.event import Event
 
 
@@ -47,12 +46,11 @@ def test_init_db(app_loader, app, pgmigrations):
     app_loader.load.assert_called_once_with(sentinel.path)
 
     pgmigrations.Migrations.assert_called_once_with(
-        app.dsn, base_directory=MIGRATIONS_DIRECTORY
+        app.dsn, locations=app.migration_locations
     )
 
     migrations = pgmigrations.Migrations.return_value
 
-    migrations.init.assert_called_once()
     migrations.apply.assert_called_once()
 
 

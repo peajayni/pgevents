@@ -1,6 +1,5 @@
 import json
 import logging
-import pathlib
 
 import click
 import pgmigrations
@@ -10,7 +9,6 @@ from pgevents.event import Event
 from pgevents.utils import app_loader
 
 LOGGER = logging.getLogger(__name__)
-MIGRATIONS_DIRECTORY = pathlib.Path(__file__).parent.absolute() / "migrations"
 
 
 @click.group()
@@ -42,8 +40,7 @@ def init_db(path):
     LOGGER.info("Initialising database for app: %s", path)
     app = app_loader.load(path)
 
-    migrations = pgmigrations.Migrations(app.dsn, base_directory=MIGRATIONS_DIRECTORY)
-    migrations.init()
+    migrations = pgmigrations.Migrations(app.dsn, locations=app.migration_locations)
     migrations.apply()
 
     LOGGER.info("Initialised database for app: %s", path)

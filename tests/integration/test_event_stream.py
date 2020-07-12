@@ -4,8 +4,8 @@ from concurrent.futures.thread import ThreadPoolExecutor
 
 import pytest
 
-from pgevents import data_access
-from pgevents.event import Event, PROCESSED, PENDING
+from pgevents import data_access, constants
+from pgevents.event import Event
 from pgevents.event_stream import EventStream
 
 QUEUE = queue.Queue()
@@ -72,8 +72,12 @@ def test_process_next_when_next(empty_queue):
     assert QUEUE.qsize() == 2
 
     with data_access.cursor(stream0.connection) as cursor:
-        assert data_access.get_event_by_id(cursor, event0.id).status == PROCESSED
-        assert data_access.get_event_by_id(cursor, event1.id).status == PROCESSED
+        assert (
+            data_access.get_event_by_id(cursor, event0.id).status == constants.PROCESSED
+        )
+        assert (
+            data_access.get_event_by_id(cursor, event1.id).status == constants.PROCESSED
+        )
 
 
 def test_process_next_when_not_next(empty_queue):
@@ -96,7 +100,9 @@ def test_process_next_when_not_next(empty_queue):
     assert QUEUE.qsize() == 1
 
     with data_access.cursor(stream0.connection) as cursor:
-        assert data_access.get_event_by_id(cursor, event0.id).status == PROCESSED
+        assert (
+            data_access.get_event_by_id(cursor, event0.id).status == constants.PROCESSED
+        )
 
 
 def test_process_next_error(empty_queue):
@@ -113,11 +119,15 @@ def test_process_next_error(empty_queue):
         stream0.process_next()
 
     with data_access.cursor(stream0.connection) as cursor:
-        assert data_access.get_event_by_id(cursor, event0.id).status == PENDING
+        assert (
+            data_access.get_event_by_id(cursor, event0.id).status == constants.PENDING
+        )
 
     assert stream1.process_next()
 
     with data_access.cursor(stream0.connection) as cursor:
-        assert data_access.get_event_by_id(cursor, event0.id).status == PROCESSED
+        assert (
+            data_access.get_event_by_id(cursor, event0.id).status == constants.PROCESSED
+        )
 
     assert QUEUE.qsize() == 1

@@ -1,9 +1,9 @@
 import time
 from threading import Thread
 
-from pgevents import data_access
+from pgevents import data_access, constants
 from pgevents.app import App
-from pgevents.event import Event, PROCESSED, PENDING
+from pgevents.event import Event
 from tests.integration import DSN
 
 CHANNEL = "test"
@@ -44,8 +44,14 @@ def test_run_processes_due_to_notification():
     app.run(should_continue=continue_for_two_seconds)
 
     with data_access.cursor(app.connection) as cursor:
-        assert data_access.get_event_by_id(cursor, foo_event_id).status == PROCESSED
-        assert data_access.get_event_by_id(cursor, bar_event_id).status == PENDING
+        assert (
+            data_access.get_event_by_id(cursor, foo_event_id).status
+            == constants.PROCESSED
+        )
+        assert (
+            data_access.get_event_by_id(cursor, bar_event_id).status
+            == constants.PENDING
+        )
 
 
 def test_run_processes_due_to_interval():
@@ -70,5 +76,11 @@ def test_run_processes_due_to_interval():
     app.run(should_continue=continue_for_two_seconds)
 
     with data_access.cursor(app.connection) as cursor:
-        assert data_access.get_event_by_id(cursor, foo_event_id).status == PROCESSED
-        assert data_access.get_event_by_id(cursor, bar_event_id).status == PENDING
+        assert (
+            data_access.get_event_by_id(cursor, foo_event_id).status
+            == constants.PROCESSED
+        )
+        assert (
+            data_access.get_event_by_id(cursor, bar_event_id).status
+            == constants.PENDING
+        )

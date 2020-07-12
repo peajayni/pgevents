@@ -1,7 +1,6 @@
 import logging
 
-
-from pgevents import data_access, event_stream
+from pgevents import data_access, event_stream, constants
 from pgevents.utils import timestamps
 
 LOGGER = logging.getLogger(__name__)
@@ -12,10 +11,14 @@ def always_continue(app):
 
 
 class App:
-    def __init__(self, dsn, channel, interval=5):
+    def __init__(self, dsn, channel, interval=5, migration_locations=None):
         self.dsn = dsn
         self.channel = channel
         self.interval = interval
+        self.migration_locations = [constants.CORE_MIGRATIONS_LOCATION,] + (
+            migration_locations or []
+        )
+
         self.last_processed = timestamps.EPOCH
 
         self.connection = None

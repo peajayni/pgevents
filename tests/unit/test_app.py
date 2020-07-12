@@ -4,6 +4,7 @@ from unittest.mock import Mock, sentinel, patch
 import pytest
 from freezegun import freeze_time
 
+from pgevents import constants
 from pgevents.utils import timestamps
 from pgevents.app import App, always_continue
 from pgevents.event_stream import EventStream
@@ -26,6 +27,24 @@ def test_always_continue():
 
 def test_last_processed(app):
     assert app.last_processed == timestamps.EPOCH
+
+
+def test_default_migration_locations(app):
+    assert app.migration_locations == [
+        constants.CORE_MIGRATIONS_LOCATION,
+    ]
+
+
+def test_custom_migration_locations():
+    app = App(
+        dsn=sentinel.dsn,
+        channel=sentinel.channel,
+        migration_locations=[sentinel.location],
+    )
+    assert app.migration_locations == [
+        constants.CORE_MIGRATIONS_LOCATION,
+        sentinel.location,
+    ]
 
 
 def test_run(app):

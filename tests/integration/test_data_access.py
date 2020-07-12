@@ -4,8 +4,8 @@ from threading import Thread
 
 import pytest
 
-from pgevents import data_access
-from pgevents.event import Event, PENDING, PROCESSED
+from pgevents import data_access, constants
+from pgevents.event import Event
 from pgevents.utils import timestamps
 from tests.integration import DSN
 
@@ -52,7 +52,7 @@ def test_create_and_get_event_without_payload():
         retrieved = data_access.get_event_by_id(cursor, created.id)
 
     assert created == retrieved
-    assert created.status == PENDING
+    assert created.status == constants.PENDING
 
 
 def test_create_and_get_event_with_payload():
@@ -87,8 +87,13 @@ def test_create_and_get_event_with_process_after():
         "expected_second_status",
     ],
     [
-        [None, None, PROCESSED, PROCESSED,],
-        [timestamps.now() + timedelta(seconds=10), None, PENDING, PROCESSED,],
+        [None, None, constants.PROCESSED, constants.PROCESSED,],
+        [
+            timestamps.now() + timedelta(seconds=10),
+            None,
+            constants.PENDING,
+            constants.PROCESSED,
+        ],
     ],
 )
 def test_get_next_event(
@@ -151,7 +156,7 @@ def test_mark_event_processed():
     event = Event(topic="foo")
     with data_access.cursor(connection) as cursor:
         created = data_access.create_event(cursor, event)
-        assert created.status == PENDING
+        assert created.status == constants.PENDING
         assert created.processed_at == None
 
     with data_access.cursor(connection) as cursor:
@@ -159,5 +164,5 @@ def test_mark_event_processed():
 
     with data_access.cursor(connection) as cursor:
         retrieved = data_access.get_event_by_id(cursor, created.id)
-        assert retrieved.status == PROCESSED
+        assert retrieved.status == constants.PROCESSED
         assert retrieved.processed_at is not None
