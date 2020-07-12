@@ -5,7 +5,7 @@ package="pgevents"
 version_file="${package}/version.py"
 
 fallback_version="0.0.0"
-git_version=$(git tag | tail -1)
+git_version=$(git tag --sort=creatordate | tail -1)
 version=${git_version:=${fallback_version}}
 
 
