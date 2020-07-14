@@ -14,10 +14,8 @@ def connection():
 
 @pytest.fixture(autouse=True)
 def apply_migrations():
-    migrations = pgmigrations.Migrations(
-        DSN, locations=[constants.CORE_MIGRATIONS_LOCATION]
-    )
-    migrations.apply()
+    migrations = pgmigrations.Migrations(locations=[constants.CORE_MIGRATIONS_LOCATION])
+    migrations.apply(DSN)
 
 
 @pytest.fixture(autouse=True)

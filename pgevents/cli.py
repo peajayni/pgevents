@@ -40,8 +40,8 @@ def init_db(path):
     LOGGER.info("Initialising database for app: %s", path)
     app = app_loader.load(path)
 
-    migrations = pgmigrations.Migrations(app.dsn, locations=app.migration_locations)
-    migrations.apply()
+    migrations = pgmigrations.Migrations(locations=app.migration_locations)
+    migrations.apply(app.dsn)
 
     LOGGER.info("Initialised database for app: %s", path)
 

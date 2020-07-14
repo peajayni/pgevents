@@ -45,13 +45,11 @@ def test_init_db(app_loader, app, pgmigrations):
 
     app_loader.load.assert_called_once_with(sentinel.path)
 
-    pgmigrations.Migrations.assert_called_once_with(
-        app.dsn, locations=app.migration_locations
-    )
+    pgmigrations.Migrations.assert_called_once_with(locations=app.migration_locations)
 
     migrations = pgmigrations.Migrations.return_value
 
-    migrations.apply.assert_called_once()
+    migrations.apply.assert_called_once_with(app.dsn)
 
 
 def test_run(app_loader, app):
