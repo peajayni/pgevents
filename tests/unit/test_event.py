@@ -1,4 +1,4 @@
-from unittest.mock import sentinel, patch
+from unittest.mock import sentinel, patch, Mock
 
 import pytest
 
@@ -24,3 +24,14 @@ def test_mark_processed(data_access):
     data_access.mark_event_processed.assert_called_once_with(
         sentinel.cursor, sentinel.id
     )
+
+
+@pytest.mark.parametrize(
+    ["payload", "expected_string_value"],
+    [["hello", "hello"], ["a" * 100, "a" * 20 + "..."]],
+)
+def test_repr_field(payload, expected_string_value):
+    event = Event(id=sentinel.id, topic=sentinel.topic, payload=payload)
+    field = Mock()
+    field.name = "payload"
+    assert event.repr_field(field) == f"payload={expected_string_value}"

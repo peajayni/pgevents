@@ -1,5 +1,5 @@
+import dataclasses
 import logging
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Any
 
@@ -8,7 +8,7 @@ from pgevents import data_access, constants
 LOGGER = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclasses.dataclass
 class Event:
     topic: str
     status: str = constants.PENDING
@@ -33,3 +33,18 @@ class Event:
     def mark_processed(self, cursor):
         assert self.id is not None, "Cannot mark processed when id is not set"
         data_access.mark_event_processed(cursor, self.id)
+
+    def __repr__(self):
+        name = self.__class__.__qualname__
+        fields = dataclasses.fields(self)
+        fields_string = f", ".join([self.repr_field(field) for field in fields])
+        return f"{name}({fields_string})"
+
+    def repr_field(self, field):
+        value = getattr(self, field.name)
+        return f"{field.name}={_to_truncated_string(value)}"
+
+
+def _to_truncated_string(value, max_lenth=20):
+    full = str(value)
+    return full if len(full) < max_lenth else (full[:max_lenth] + "...")
