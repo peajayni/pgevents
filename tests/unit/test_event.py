@@ -28,7 +28,7 @@ def test_mark_processed(data_access):
 
 @pytest.mark.parametrize(
     ["payload", "expected_string_value"],
-    [["hello", "hello"], ["a" * 100, "a" * 20 + "..."]],
+    [["hello", "hello"], ["a" * 100, "a" * 50 + "..."]],
 )
 def test_repr_field(payload, expected_string_value):
     event = Event(id=sentinel.id, topic=sentinel.topic, payload=payload)

@@ -45,6 +45,6 @@ class Event:
         return f"{field.name}={_to_truncated_string(value)}"
 
 
-def _to_truncated_string(value, max_lenth=20):
+def _to_truncated_string(value, max_lenth=50):
     full = str(value)
     return full if len(full) < max_lenth else (full[:max_lenth] + "...")
