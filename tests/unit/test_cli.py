@@ -1,3 +1,4 @@
+import json
 from unittest.mock import Mock, sentinel, MagicMock
 
 import pytest
@@ -17,13 +18,6 @@ def app_loader(monkeypatch, app):
     app_loader.load.return_value = app
     monkeypatch.setattr("pgevents.cli.app_loader", app_loader)
     return app_loader
-
-
-@pytest.fixture
-def json(monkeypatch):
-    json = Mock()
-    monkeypatch.setattr("pgevents.cli.json", json)
-    return json
 
 
 @pytest.fixture
@@ -59,20 +53,16 @@ def test_run(app_loader, app):
     app.run.assert_called_once()
 
 
-def test_create_event(app_loader, app, json):
-    cli.create_event(sentinel.path, sentinel.topic, sentinel.payload)
-    event = Event(topic=sentinel.topic, payload=json.loads(sentinel.payload))
-
-    app_loader.load.assert_called_once_with(sentinel.path)
-    app.create_event.assert_called_once_with(sentinel.topic, event)
-
-
-def test_create_event(app_loader, app, json, data_access):
-    event = Event(topic=sentinel.topic, payload=json.loads(sentinel.payload))
+@pytest.mark.parametrize(
+    ["cli_payload", "payload"],
+    [[json.dumps(None), None], [json.dumps(dict(foo="bar")), dict(foo="bar")]],
+)
+def test_create_event(app_loader, app, data_access, cli_payload, payload):
+    event = Event(topic=sentinel.topic, payload=payload)
     connection = data_access.connect.return_value
     cursor = data_access.cursor.return_value.__enter__.return_value
 
-    cli.create_event(sentinel.path, sentinel.topic, sentinel.payload)
+    cli.create_event(sentinel.path, sentinel.topic, cli_payload)
 
     app_loader.load.assert_called_once_with(sentinel.path)
     data_access.connect.assert_called_once_with(app.dsn)

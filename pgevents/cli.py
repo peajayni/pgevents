@@ -31,7 +31,7 @@ def run_handler(path):
 @cli.command(name="create_event")
 @click.argument("path")
 @click.argument("topic")
-@click.option("--payload", default=None)
+@click.option("--payload", default="null")
 def create_event_handler(path, topic, payload):
     create_event(path, topic, payload)
 
@@ -52,9 +52,10 @@ def run(path):
     app.run()
 
 
-def create_event(path, topic, payload):
+def create_event(path, topic, string_payload):
+    payload = json.loads(string_payload)
     app = app_loader.load(path)
-    event = Event(topic=topic, payload=json.loads(payload))
+    event = Event(topic=topic, payload=payload)
     connection = data_access.connect(app.dsn)
     with data_access.cursor(connection) as cursor:
         return data_access.create_event(cursor, event)
