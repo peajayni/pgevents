@@ -45,7 +45,7 @@ def notify(cursor, channel):
 
 
 def create_event(cursor, event):
-    LOGGER.debug("Creating event: %s")
+    LOGGER.debug("Creating event: %s", event)
     if event.process_after:
         cursor.execute(
             """
