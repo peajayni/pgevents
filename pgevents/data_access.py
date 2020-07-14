@@ -1,3 +1,4 @@
+import logging
 from contextlib import contextmanager
 from datetime import timezone
 
@@ -10,6 +11,8 @@ from pgevents.event import Event
 
 register_adapter(dict, Json)
 register_adapter(list, Json)
+
+LOGGER = logging.getLogger(__name__)
 
 
 class RealDictTimezoneAwareCursor(RealDictCursor):
@@ -42,6 +45,7 @@ def notify(cursor, channel):
 
 
 def create_event(cursor, event):
+    LOGGER.debug("Creating event: %s")
     if event.process_after:
         cursor.execute(
             """
@@ -76,6 +80,7 @@ def get_event_by_id(cursor, event_id):
 
 
 def get_next_event(cursor, topics):
+    LOGGER.debug("Getting next event for topics: %s", topics)
     query = sql.SQL(
         """
         SELECT *
@@ -90,12 +95,13 @@ def get_next_event(cursor, topics):
     ).format(sql.SQL(", ").join(sql.Literal(topic) for topic in topics))
     cursor.execute(query)
     data = cursor.fetchone()
-    if not data:
-        return None
-    return Event.from_dict(data)
+    event = Event.from_dict(data) if data else None
+    LOGGER.debug("Next event: %s", event)
+    return event
 
 
 def mark_event_processed(cursor, event_id):
+    LOGGER.debug("Marking event processed: %s", event_id)
     cursor.execute(
         """
         UPDATE events
