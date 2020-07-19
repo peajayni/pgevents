@@ -55,16 +55,20 @@ def test_create_and_get_event_without_payload():
     assert created.status == constants.PENDING
 
 
-def test_create_and_get_event_with_payload():
+@pytest.mark.parametrize(
+    ["payload"],
+    [[None], [True], ["Hello world"], [1], [[0, 1, 2]], [dict(hello=[0, 1])]],
+)
+def test_create_and_get_event_with_payload(payload):
     connection = data_access.connect(DSN)
-    event = Event(topic="foo", payload=[dict(foo="bar"), dict(hello=[0, 1])])
+    event = Event(topic="foo", payload=payload)
     with data_access.cursor(connection) as cursor:
         created = data_access.create_event(cursor, event)
 
     with data_access.cursor(connection) as cursor:
         retrieved = data_access.get_event_by_id(cursor, created.id)
 
-    assert retrieved.payload == event.payload
+    assert retrieved.payload == payload
 
 
 def test_create_and_get_event_with_process_after():

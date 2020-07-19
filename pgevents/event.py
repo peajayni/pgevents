@@ -24,7 +24,7 @@ class Event:
             topic=data["topic"],
             status=data["status"],
             id=data["id"],
-            payload=data["payload"],
+            payload=data["payload"]["payload"],
             created_at=data["created_at"],
             process_after=data["process_after"],
             processed_at=data["processed_at"],

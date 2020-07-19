@@ -46,6 +46,9 @@ def notify(cursor, channel):
 
 def create_event(cursor, event):
     LOGGER.debug("Creating event: %s", event)
+    # jsonb columns cannot handle certain data types without casting
+    # so make sure payload is always a JSON object by nesting it
+    payload = dict(payload=event.payload)
     if event.process_after:
         cursor.execute(
             """
@@ -53,7 +56,7 @@ def create_event(cursor, event):
             VALUES (%s, %s, %s)
             RETURNING *
             """,
-            [event.topic, event.payload, event.process_after],
+            [event.topic, payload, event.process_after],
         )
     else:
         cursor.execute(
@@ -62,7 +65,7 @@ def create_event(cursor, event):
             VALUES (%s, %s)
             RETURNING *
             """,
-            [event.topic, event.payload],
+            [event.topic, payload],
         )
     return Event.from_dict(cursor.fetchone())
 
